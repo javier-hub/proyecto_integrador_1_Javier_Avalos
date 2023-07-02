@@ -1,6 +1,8 @@
 // Cargar las variables de entorno del archivo .env
 require("dotenv").config();
 
+const fs = require("fs").promises;
+
 // Importar el módulo Express
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -39,53 +41,56 @@ app.post("/", (req, res) => {
   res.status(201).send("Fruta agregada!"); // Enviar una respuesta exitosa
 });
 
+// Ruta para modificar una fruta existente por su ID
 app.put("/frutachange/id/:id", (req, res) => {
-  //Find para devolver una sola fruta por el id y cambiarla o crear fruta sino existe
-  let parametro = parseInt(req.params.id); //Transforma a string a int
-  const result = BD.find((i) => i.id === parametro); //Busca coincidencias
-  if (result) {
-    const find = (elment) => elment === result;
+  let parametro = parseInt(req.params.id); // Obtener el ID de la URL y convertirlo a número entero
+
+  // Buscar el producto por su ID
+  const resultado = BD.find((fruta) => fruta.id === parametro);
+
+  if (resultado) {
+    const find = (elment) => elment === resultado;
     const otraFruta = req.body;
     BD[BD.findIndex(find)] = otraFruta;
     guardarFrutas(BD);
-    res
-      .status(200)
-      .send(`Se cambiaron los valores correctamente en id:${parametro}!.`);
+    res.status(200).send("Producto modificado correctamente.");
   } else {
     const nuevaFruta = req.body;
     BD.push(nuevaFruta); // Agregar la nueva fruta al arreglo
     guardarFrutas(BD); // Guardar los cambios en el archivo
-    res
-      .status(201)
-      .send(
-        `Se agrego una fruta con id:${parametro} al no encrontrar coincidencias de Id!.`
-      );
+    res.status(201).send("Fruta agregada!");
   }
 });
 
+// Ruta para eliminar una fruta por su ID
 app.delete("/frutaout/id/:id", (req, res) => {
-  //borrar apartir de un id
-  let parametro = parseInt(req.params.id);
-  const result = BD.find((i) => i.id === parametro);
-  if (result) {
-    BD = BD.filter((item) => item.id !== parametro);
-    guardarFrutas(BD);
-    res
-      .status(200)
-      .send(`Se elimino el archivo con id:${parametro} correctamente!. `);
+  let parametro = parseInt(req.params.id); // Obtener el ID de la URL y convertirlo a número entero
+  // Buscar el producto por su ID
+  const index = BD.findIndex((fruta) => fruta.id === parametro);
+
+  if (index !== -1) {
+    // Eliminar el producto del array de frutas usando splice()
+    BD.splice(index, 1);
+
+    res.status(200).send("Producto eliminado correctamente.");
   } else {
-    res.send(`No existe fruta con id correspondente al id:${parametro}.`);
+    res.status(404).send("No se encontró el producto.");
   }
 });
 
+// Ruta para obtener un producto por su ID
 app.get("/frutaseek/id/:id", (req, res) => {
   //un find para devolver una sola fruta por el id
   let parametro = parseInt(req.params.id);
-  const result = BD.find((i) => i.id === parametro);
+  // Buscar el producto por su ID utilizando el método find()
+  const result = BD.find((fruta) => fruta.id === parametro);
   result
     ? res.json(result)
-    : res.json([
-        { id: "Error", descripcion: "No se encontraron coincidencias de id." },
+    : res.status(404).json([
+        {
+          id: "Error 404",
+          descripcion: "No se encontró el producto.",
+        },
       ]);
 });
 
